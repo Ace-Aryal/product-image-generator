@@ -61,7 +61,6 @@ async def generate_single_product_image(
         image = session.get(PImage, image_id)
         image.status = "generating"
         style_name = image.style_name
-        job_id = image.job_id
         session.add(image)
         session.commit()
     style_prompt = STYLING_PROMPTS[style_name]
@@ -69,13 +68,14 @@ async def generate_single_product_image(
     try:
         image_byte = await generate_product_image(prompt, style_prompt, headshot_url)
         # upload image to imagekit
-        url = upload_file(
-            image_byte,
-            file_name=f"{image_id}.png",
-            folder=f"product_images/{job_id}/",
-        )
         with Session(engine) as session:
             image = session.get(PImage, image_id)
+            job_id = image.job_id
+            url = upload_file(
+                image_byte,
+                file_name=f"{image_id}.png",
+                folder=f"product_images/{job_id}/",
+            )
             image.status = "uploaded"
             image.imagekit_url = url
             session.add(image)
